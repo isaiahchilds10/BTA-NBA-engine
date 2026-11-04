@@ -1,0 +1,2 @@
+streamlit>=1.43,<2
+nba_api>=1.9,<2
