@@ -411,6 +411,118 @@ with nba_tab:
         else:
             st.caption("No backtest run in this session yet.")
 
+# --- Player-prop calculator: reuses the existing NBA baseline model ---
+    st.divider()
+    st.subheader("NBA player prop calculator")
+    st.caption(
+        "Choose a real game-log dataset, player, stat, and line. These are "
+        "historical baseline estimates, not verified BTA grades or betting advice."
+    )
+    from nba_model import historical_brier, expected_roi
+
+    calc_source = st.radio(
+        "Calculator game logs",
+        ["Automatic source", "Upload NBA CSV"],
+        horizontal=True, key="bta_calc_source",
+    )
+    if calc_source == "Upload NBA CSV":
+        calc_upload = st.file_uploader(
+            "Upload genuine NBA PlayerGameLogs CSV",
+            type=["csv"], key="bta_calc_upload",
+        )
+        if calc_upload is not None and st.button(
+            "Import calculator CSV", key="bta_calc_import"
+        ):
+            try:
+                parsed_logs = parse_uploaded_csv(calc_upload)
+                if not parsed_logs:
+                    raise ValueError("The file contains no recognized game logs.")
+                st.session_state["bta_calc_uploaded_logs"] = parsed_logs
+                st.success(f"Imported {len(parsed_logs):,} player-game records.")
+            except (ValueError, UnicodeError, KeyError, TypeError) as exc:
+                st.error(f"CSV could not be imported: {exc}")
+        calc_logs = st.session_state.get("bta_calc_uploaded_logs", [])
+    else:
+        calc_logs = st.session_state.get("bta_auto_nba_logs", [])
+
+    if not calc_logs:
+        st.info("No calculator game logs loaded. Check the automatic NBA source above or import a CSV.")
+    else:
+        calc_grouped, calc_names = group_players(calc_logs)
+        if not calc_grouped:
+            st.warning("No recognizable players were found in this dataset.")
+        else:
+            newest_game = max(row["game_date"] for row in calc_logs)
+            st.caption(
+                f"{len(calc_logs):,} player-games loaded; newest recorded game: "
+                f"{newest_game.isoformat()}."
+            )
+            if (date.today() - newest_game).days > 7:
+                st.warning("The most recent game log is over seven days old. Do not treat this as current player information.")
+            calc_ids = sorted(calc_grouped, key=lambda pid: calc_names[pid].casefold())
+            calc_pid = st.selectbox(
+                "NBA player", calc_ids,
+                format_func=lambda pid: calc_names[pid],
+                key="bta_calc_player",
+            )
+            calc_stat_name = st.selectbox(
+                "Prop statistic", list(METRICS), key="bta_calc_stat",
+            )
+            calc_stat = METRICS[calc_stat_name]
+            suggested_line = {"points": 20.5, "rebounds": 6.5, "assists": 4.5}.get(calc_stat, 20.5)
+            calc_line = st.number_input(
+                "Prop line", min_value=0.5, max_value=199.5,
+                value=suggested_line, step=0.5,
+                key="bta_calc_line",
+            )
+            calc_odds = st.number_input(
+                "American odds (illustrative; verify your actual price)",
+                min_value=-5000, max_value=5000, value=-110, step=5,
+                key="bta_calc_odds",
+            )
+            if -100 < calc_odds < 100:
+                st.error("American odds must be +100 or greater, or -100 or lower.")
+            else:
+                calc_result = estimate(calc_grouped[calc_pid], calc_stat, float(calc_line))
+                if calc_result.get("status") != "BASELINE ONLY":
+                    st.warning(
+                        f"Not enough historical games: {calc_result.get('games', 0)} "
+                        f"available; {calc_result.get('min_required', 'more')} required."
+                    )
+                else:
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Historical projection", f"{calc_result['projection']:.1f}")
+                    c2.metric(f"Over {calc_line:g}", f"{calc_result['p_over'] * 100:.1f}%")
+                    c3.metric(f"Under {calc_line:g}", f"{calc_result['p_under'] * 100:.1f}%")
+                    calc_side = st.radio(
+                        "Evaluate side", ["Over", "Under"],
+                        horizontal=True, key="bta_calc_side",
+                    )
+                    calc_p = calc_result["p_over"] if calc_side == "Over" else calc_result["p_under"]
+                    calc_roi = expected_roi(calc_p, calc_result["p_push"], int(calc_odds))
+                    st.write(
+                        f"**Illustrative expected ROI at {calc_odds:+d}: {calc_roi * 100:+.1f}%** "
+                        "— valid only if the unvalidated probability estimate is accurate."
+                    )
+                    st.caption(
+                        f"Based on {calc_result['games']} games through "
+                        f"{calc_result['last_game']}. Last-five average: "
+                        f"{calc_result['recent_5_avg']:.1f}."
+                    )
+                    calc_check = historical_brier(
+                        calc_grouped[calc_pid], calc_stat, float(calc_line)
+                    )
+                    if calc_check.get("count", 0):
+                        st.caption(
+                            f"Historical fixed-line test: {calc_check['count']} outcomes; "
+                            f"Brier score {calc_check['brier']:.3f} (lower is better). "
+                            "This does not use historical sportsbook prices."
+                        )
+                    st.warning(
+                        "No injuries, lineups, minutes, opponent adjustments, or five-game-script "
+                        "analysis are included. This is NOT a TAIG, BTA+, or BTA pick."
+                    )
+                    
 with nfl_tab:
     st.subheader("NFL research engine")
     st.selectbox("NFL market families", NFL_MARKETS, key="bta_nfl_market")
