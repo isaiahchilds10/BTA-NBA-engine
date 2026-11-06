@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 120" role="img" aria-label="BTA regular leather belt with a silver buckle">
+  <defs>
+    <linearGradient id="leather" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4b3027"/><stop offset=".42" stop-color="#2a1918"/><stop offset="1" stop-color="#140f11"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#969ba4"/><stop offset=".78" stop-color="#e4e7eb"/><stop offset="1" stop-color="#747982"/>
+    </linearGradient>
+  </defs>
+  <path d="M18 44 Q158 20 316 37 L328 50 L316 72 Q166 98 18 77 Z" fill="url(#leather)" stroke="#6d3832" stroke-width="3"/>
+  <path d="M23 48 Q159 27 312 41 M23 73 Q168 91 313 67" fill="none" stroke="#b48b67" stroke-opacity=".85" stroke-width="1.7" stroke-dasharray="4 5"/>
+  <path d="M252 36 L312 33 L329 49 L314 76 L251 78 Z" fill="#1e1213" stroke="url(#steel)" stroke-width="6"/>
+  <path d="M259 43 L307 41 L317 51 L308 69 L259 70 Z" fill="none" stroke="#bfc5cf" stroke-width="1.5"/>
+  <path d="M252 57 H303" fill="none" stroke="url(#steel)" stroke-linecap="round" stroke-width="5"/>
+  <path d="M295 54 l8 3 -8 3" fill="#f7f7f7"/>
+  <circle cx="214" cy="52" r="3" fill="#07090e" stroke="#986b5d"/>
+  <circle cx="232" cy="54" r="3" fill="#07090e" stroke="#986b5d"/>
+  <text x="102" y="69" fill="#f6f6f7" font-size="42" font-weight="900" font-family="Arial,sans-serif" font-style="italic" letter-spacing="2">BTA</text>
+  <path d="M102 80 H210" stroke="#d32235" stroke-width="3"/>
+</svg>
